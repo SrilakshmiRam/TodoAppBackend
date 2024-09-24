@@ -7,7 +7,11 @@ const sqlite3=require('sqlite3')
 const app=express()
 const path=require('path')
 
-app.use(cors())
+app.use(cors({
+    origin:'http://localhost:3000',
+    methods:['POST','GET'],
+    allowedHeaders:['Content-Type','Authorization']
+}))
 
 app.use(express.json());
 
