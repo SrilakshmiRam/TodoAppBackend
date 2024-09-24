@@ -36,6 +36,22 @@ const initiateAndStartDatabaseServer = async () => {
 
 initiateAndStartDatabaseServer();
 
+// Middleware for JWT Authentication
+const authenticateJWT = (req, res, next) => {
+    const token = req.headers.authorization && req.headers.authorization.split(' ')[1];
+    if (!token) {
+        return res.sendStatus(401);
+    }
+
+    jwt.verify(token, 'secret_token', (err, user) => {
+        if (err) {
+            return res.sendStatus(403);
+        }
+        req.user = user; // Save user info for later use
+        next();
+    });
+};
+
 // User Signup
 app.post('/Signup', async (request, response) => {
     const { username, email, password } = request.body;
@@ -62,7 +78,7 @@ app.post('/login', async (req, res) => {
             const isMatchedPassword = await bcrypt.compare(password, dbUser.password);
             if (isMatchedPassword === true) {
                 const payload = { username: username };
-                const jwtToken = jwt.sign(payload, 'secret_token');
+                const jwtToken = jwt.sign(payload, 'secret_token', { expiresIn: '1h' });
                 res.status(200).json({ jwtToken });
             } else {
                 res.status(400).json({ message: 'Invalid User or password' });
@@ -74,7 +90,7 @@ app.post('/login', async (req, res) => {
 });
 
 // Add Task
-app.post('/add', async (req, res) => {
+app.post('/add', authenticateJWT, async (req, res) => {
     const { id, title, description } = req.body; 
     try {
         const insertQuery = `INSERT INTO todo (id, title, description) VALUES (?, ?, ?);`;
@@ -87,11 +103,11 @@ app.post('/add', async (req, res) => {
 });
 
 // Get All Tasks
-app.get('/todos', async (req, res) => {
+app.get('/todos', authenticateJWT, async (req, res) => {
     try {
         const selectQuery = `SELECT * FROM todo;`;
         const data = await db.all(selectQuery);
-        res.status(200).json(data); // Return data with proper status
+        res.status(200).json(data);
     } catch (e) {
         console.error(e);
         res.status(401).json({ message: 'Failed to get the data' });
@@ -99,9 +115,9 @@ app.get('/todos', async (req, res) => {
 });
 
 // Edit Task
-app.post('/edit/:id', async (req, res) => {
+app.post('/edit/:id', authenticateJWT, async (req, res) => {
     const { id } = req.params;
-    const { title, description } = req.body; // Extract title and description from request body
+    const { title, description } = req.body;
     try {
         const updateQuery = `UPDATE todo SET title = ?, description = ? WHERE id = ?`;
         await db.run(updateQuery, [title, description, id]);
@@ -113,7 +129,7 @@ app.post('/edit/:id', async (req, res) => {
 });
 
 // Delete Task
-app.post('/delete/:id', async (req, res) => {
+app.post('/delete/:id', authenticateJWT, async (req, res) => {
     const { id } = req.params;
     try {
         const deleteQuery = `DELETE FROM todo WHERE id = ?;`;
