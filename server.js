@@ -87,7 +87,7 @@ app.post('/add', async (req, res) => {
 });
 
 // Get All Tasks
-app.get('/', async (req, res) => {
+app.get('/todos', async (req, res) => {
     try {
         const selectQuery = `SELECT * FROM todo;`;
         const data = await db.all(selectQuery);
