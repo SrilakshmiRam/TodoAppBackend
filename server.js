@@ -8,7 +8,7 @@ const app = express();
 const path = require('path');
 
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: 'https://todo-app-frontend-eta-gilt.vercel.app',
     methods: ['POST', 'GET'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -163,3 +163,22 @@ app.get('/users/:id', async (req, res) => {
     }
 });
 
+
+app.get('/users', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const userQuery = `SELECT * FROM users;`;
+        const data=await db.all(userQuery)
+        if (data) {
+            res.status(200).json({
+                message: 'Data fetched successfully',
+                user: data, // Include user data in the response
+            });
+        } else {
+            res.status(404).json({ message: 'User not found' }); // Handle case where user is not found
+        }
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ message: 'Failed to retrieve the data' });
+    }
+});
